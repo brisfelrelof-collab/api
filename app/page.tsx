@@ -66,12 +66,7 @@ export default function DashboardPage() {
 
   return (
     <>
-      {/* Leaflet CSS */}
-      <link
-        rel="stylesheet"
-        href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
-      />
-      <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" async />
+      {/* Leaflet loaded via layout.tsx */}
 
       <div
         style={{
