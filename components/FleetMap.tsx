@@ -23,21 +23,13 @@ interface FleetMapProps {
   vehicles: Vehicle[];
 }
 
-// Waits until window.L is available (Leaflet loaded via CDN script)
-function waitForLeaflet(cb: () => void, tries = 0) {
-  if (typeof window !== "undefined" && (window as any).L) {
-    cb();
-  } else if (tries < 50) {
-    setTimeout(() => waitForLeaflet(cb, tries + 1), 100);
-  }
-}
-
 export default function FleetMap({ vehicles }: FleetMapProps) {
   const mapRef = useRef<LeafletMap | null>(null);
   const markersRef = useRef<Record<string, VehicleMarker>>({});
   const mapContainerRef = useRef<HTMLDivElement>(null);
   const colorsRef = useRef<Record<string, string>>({});
   const colorIdxRef = useRef(0);
+  const initializedRef = useRef(false);
 
   const PALETTE = ["#00f5d4", "#f72585", "#4cc9f0", "#fee440", "#9b5de5"];
 
@@ -49,12 +41,17 @@ export default function FleetMap({ vehicles }: FleetMapProps) {
     return colorsRef.current[nome];
   };
 
-  // Init map once — waits for Leaflet CDN script to be ready
+  // Init map once
   useEffect(() => {
-    waitForLeaflet(() => {
-      if (mapRef.current || !mapContainerRef.current) return;
+    (async () => {
+      if (initializedRef.current || !mapContainerRef.current) return;
 
-      const L = (window as any).L;
+      const L = await import("leaflet");
+
+      // Limpar container se ainda tiver dados do Leaflet
+      if ((mapContainerRef.current as any)._leaflet_id) {
+        delete (mapContainerRef.current as any)._leaflet_id;
+      }
 
       const map: LeafletMap = L.map(mapContainerRef.current).setView(
         [-8.8383, 13.2344],
@@ -70,20 +67,22 @@ export default function FleetMap({ vehicles }: FleetMapProps) {
       ).addTo(map);
 
       mapRef.current = map;
-    });
+      initializedRef.current = true;
+    })();
 
     return () => {
       if (mapRef.current) {
         mapRef.current.remove();
         mapRef.current = null;
+        initializedRef.current = false;
       }
     };
   }, []);
 
   // Update markers whenever vehicles change
   useEffect(() => {
-    waitForLeaflet(() => {
-      const L = (window as any).L;
+    (async () => {
+      const L = await import("leaflet");
       if (!mapRef.current) return;
 
       const map = mapRef.current;
@@ -160,7 +159,7 @@ export default function FleetMap({ vehicles }: FleetMapProps) {
           map.fitBounds(latlngs, { padding: [60, 60] });
         }
       }
-    });
+    })();
   }, [vehicles]);
 
   return (
