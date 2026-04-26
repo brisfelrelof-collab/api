@@ -9,11 +9,25 @@ import { NextRequest, NextResponse } from "next/server";
 //  Após leitura, regista comandoLidoEm para a central saber que o ESP32 recebeu.
 // ─────────────────────────────────────────────────────────────────────────────
 
-declare global {
-  var _alugueresStore: Record<string, any> | undefined;
+// Definição do tipo Aluguer (deve ser igual ao usado noutros endpoints)
+export interface Aluguer {
+  id: string;
+  viaturaId: string;
+  status: "activo" | "expirado" | "aprovado" | "finalizado";
+  comandoMotor?: "arranque" | "parado";
+  comandoLidoEm?: number;
+  fimPrevistaEm?: number;
+  // outras propriedades que o aluguer possuir
 }
-if (!global._alugueresStore) global._alugueresStore = {};
-const store = global._alugueresStore;
+
+// Declaração global com o tipo correcto
+declare global {
+  var alugueresStore: Record<string, Aluguer> | undefined;
+}
+
+// Inicializar store se não existir
+if (!global.alugueresStore) global.alugueresStore = {};
+const store = global.alugueresStore;
 
 const CORS = {
   "Access-Control-Allow-Origin": "*",
@@ -35,10 +49,10 @@ export async function GET(req: NextRequest) {
 
   // Encontrar aluguer activo para esta viatura
   const aluguer = Object.values(store).find(
-    (a: any) =>
+    (a) =>
       a.viaturaId === viaturaId &&
       ["activo", "expirado", "aprovado"].includes(a.status)
-  ) as any;
+  );
 
   if (!aluguer) {
     // Sem aluguer activo — motor deve estar parado
