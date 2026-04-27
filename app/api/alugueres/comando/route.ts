@@ -22,12 +22,12 @@ export interface Aluguer {
 
 // Declaração global com o tipo correcto
 declare global {
-  var alugueresStore: Record<string, Aluguer> | undefined;
+  var _alugueresStore: Record<string, Aluguer> | undefined;
 }
 
-// Inicializar store se não existir
-if (!global.alugueresStore) global.alugueresStore = {};
-const store = global.alugueresStore;
+// Inicializar store se não existir — DEVE ser o mesmo nome que route.ts principal
+if (!global._alugueresStore) global._alugueresStore = {};
+const store = global._alugueresStore;
 
 const CORS = {
   "Access-Control-Allow-Origin": "*",

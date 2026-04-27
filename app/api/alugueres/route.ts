@@ -144,7 +144,10 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    if (horasContratadas < 1) {
+    // Normalizar para inteiro (Flutter pode enviar double)
+    const horas = Math.ceil(Number(horasContratadas));
+
+    if (horas < 1) {
       return NextResponse.json(
         { error: "Mínimo de 1 hora." },
         { status: 400, headers: CORS }
@@ -164,7 +167,7 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    const valorTotal = horasContratadas * VALOR_POR_HORA;
+    const valorTotal = horas * VALOR_POR_HORA;
 
     const aluguer: Aluguer = {
       id: uid(),
@@ -174,7 +177,7 @@ export async function POST(req: NextRequest) {
       clienteId,
       clienteNome:     clienteNome     ?? "Cliente",
       clienteTelefone: clienteTelefone ?? "",
-      horasContratadas,
+      horasContratadas: horas,
       valorPorHora: VALOR_POR_HORA,
       valorTotal,
       penalizacao: 0,
