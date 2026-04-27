@@ -343,3 +343,14 @@ export async function PATCH(req: NextRequest) {
 export async function OPTIONS() {
   return new NextResponse(null, { status: 204, headers: CORS });
 }
+
+// ─────────────────────────────────────────────────────────────────────────────
+//  GET /api/alugueres/comando?viaturaId=xxx
+//  Endpoint exclusivo para o ESP32 fazer polling do comando do motor.
+//  Após leitura, regista o timestamp e devolve o comando actual.
+// ─────────────────────────────────────────────────────────────────────────────
+//  NOTA: Este endpoint deve estar em app/api/alugueres/comando/route.ts
+//  Separado aqui apenas para documentação conjunta.
+//
+//  Resposta: { comando: "arranque" | "parado" | null, aluguerActivo: boolean }
+// ─────────────────────────────────────────────────────────────────────────────
