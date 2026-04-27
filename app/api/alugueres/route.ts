@@ -154,20 +154,44 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    // Verificar se viatura já tem aluguer activo/pendente/aprovado
+    // ── FIX BUG 2: Conflito 409 ──────────────────────────────────────────────
+    // Se vier do fluxo da central (clienteId começa com "central-"), finaliza
+    // automaticamente qualquer aluguer anterior da viatura que ainda esteja
+    // pendente/aprovado/activo em vez de rejeitar com 409.
+    // Se vier do app do utilizador, mantém o comportamento original (409).
+    const isCentral = typeof clienteId === "string" && clienteId.startsWith("central-");
     const conflito = Object.values(store).find(
       (a) =>
         a.viaturaId === viaturaId &&
         ["pendente", "aprovado", "activo"].includes(a.status)
     );
     if (conflito) {
-      return NextResponse.json(
-        { error: "Esta viatura já tem um aluguer activo ou pendente." },
-        { status: 409, headers: CORS }
-      );
+      if (isCentral) {
+        // Fechar o aluguer anterior automaticamente
+        store[conflito.id] = {
+          ...conflito,
+          status: "finalizado",
+          fimRealEm: Date.now(),
+          comandoMotor: "parado",
+        };
+        console.log(`[ALUGUER] Conflito resolvido — aluguer ${conflito.id} fechado automaticamente pela central`);
+      } else {
+        return NextResponse.json(
+          { error: "Esta viatura já tem um aluguer activo ou pendente." },
+          { status: 409, headers: CORS }
+        );
+      }
     }
 
+    const agora = Date.now();
     const valorTotal = horas * VALOR_POR_HORA;
+
+    // ── FIX BUG 1: Comando/Status ─────────────────────────────────────────────
+    // Quando vem da central, cria já como "activo" com comandoMotor "arranque"
+    // para que o ESP32 receba imediatamente o comando correcto no polling.
+    // Quando vem do app do utilizador, cria como "pendente" (fluxo normal).
+    const statusInicial: StatusAluguer = isCentral ? "activo" : "pendente";
+    const comandoInicial: ComandoMotor = isCentral ? "arranque" : null;
 
     const aluguer: Aluguer = {
       id: uid(),
@@ -182,13 +206,16 @@ export async function POST(req: NextRequest) {
       valorTotal,
       penalizacao: 0,
       valorFinal: valorTotal,
-      criadoEm: Date.now(),
-      status: "pendente",
-      comandoMotor: null,
+      criadoEm: agora,
+      aprovadoEm: isCentral ? agora : undefined,
+      inicioEm:   isCentral ? agora : undefined,
+      fimPrevistaEm: isCentral ? agora + horas * 3600 * 1000 : undefined,
+      status: statusInicial,
+      comandoMotor: comandoInicial,
     };
 
     store[aluguer.id] = aluguer;
-    console.log(`[ALUGUER] Novo pedido ${aluguer.id} — ${viaturaNome} — ${horasContratadas}h — ${valorTotal} Kz`);
+    console.log(`[ALUGUER] Novo pedido ${aluguer.id} — ${viaturaNome} — ${horas}h — ${valorTotal} Kz — status: ${statusInicial}`);
 
     return NextResponse.json({ ok: true, aluguer }, { status: 201, headers: CORS });
   } catch {
