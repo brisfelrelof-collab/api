@@ -50,10 +50,10 @@ export interface Aluguer {
 // ─────────────────────────────────────────────────────────────────────────────
 
 declare global {
-  var _alugueresStore: Record<string, Aluguer> | undefined;
+  var _alugueresStore: Record<string, any> | undefined;
 }
 if (!global._alugueresStore) global._alugueresStore = {};
-const store: Record<string, Aluguer> = global._alugueresStore;
+const store: Record<string, Aluguer> = global._alugueresStore as Record<string, Aluguer>;
 
 // ─────────────────────────────────────────────────────────────────────────────
 //  HELPERS

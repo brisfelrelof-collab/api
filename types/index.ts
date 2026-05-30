@@ -4,6 +4,8 @@ export interface VehicleData {
   lng: number;
   spd: number;
   fix: boolean;
+  temp?: number;
+  hum?: number;
   timestamp: number;
 }
 

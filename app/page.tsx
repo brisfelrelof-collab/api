@@ -12,6 +12,8 @@ interface Vehicle {
   lng: number;
   spd: number;
   fix: boolean;
+  temp?: number;
+  hum?: number;
   timestamp: number;
   stale: boolean;
   ago: number;
@@ -295,6 +297,18 @@ export default function DashboardPage() {
                   [
                     "Status",
                     selectedVehicle.stale ? "Sem sinal" : "GPS Fix OK",
+                  ],
+                  [
+                    "Temperatura",
+                    selectedVehicle.temp !== undefined
+                      ? `${selectedVehicle.temp.toFixed(1)}°C`
+                      : "—",
+                  ],
+                  [
+                    "Humidade",
+                    selectedVehicle.hum !== undefined
+                      ? `${selectedVehicle.hum.toFixed(1)}%`
+                      : "—",
                   ],
                   ["Último sinal", `${selectedVehicle.ago}s atrás`],
                 ].map(([label, value]) => (

@@ -9,6 +9,8 @@ interface Vehicle {
   lng: number;
   spd: number;
   fix: boolean;
+  temp?: number;
+  hum?: number;
   timestamp: number;
   stale: boolean;
   ago: number;
@@ -125,6 +127,8 @@ export default function FleetMap({ vehicles }: FleetMapProps) {
             <span style="color:#aaa;font-size:11px">
               ${v.lat.toFixed(6)}, ${v.lng.toFixed(6)}<br/>
               Velocidade: ${v.spd.toFixed(1)} km/h<br/>
+              ${v.temp !== undefined ? `Temp: ${v.temp.toFixed(1)}°C<br/>` : ""}
+              ${v.hum !== undefined ? `Hum: ${v.hum.toFixed(1)}%<br/>` : ""}
               ${v.stale
                 ? `<span style="color:#f44">Sem sinal — ${v.ago}s atrás</span>`
                 : `<span style="color:#4c4">Ao vivo</span>`}
@@ -149,6 +153,16 @@ export default function FleetMap({ vehicles }: FleetMapProps) {
           markersRef.current[v.nome] = { marker, circle };
         }
       });
+
+      const activeNames = new Set(vehicles.map((v) => v.nome));
+      for (const name of Object.keys(markersRef.current)) {
+        if (!activeNames.has(name)) {
+          const { marker, circle } = markersRef.current[name];
+          marker.remove();
+          circle.remove();
+          delete markersRef.current[name];
+        }
+      }
 
       // Fit bounds
       if (vehicles.length > 0) {
